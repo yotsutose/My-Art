@@ -1,0 +1,110 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script src="orbitcontrols.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+
+    <script>
+        // ページの読み込みを待つ
+        window.addEventListener('load', init);
+
+        function init() {
+            // レンダラーを作成
+            const renderer = new THREE.WebGLRenderer({
+                canvas: document.querySelector('#myCanvas'),
+                antialias: true
+            });
+
+            // シーンを作成
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xFFFFFF);
+
+            // フォグを設定
+            scene.fog = new THREE.Fog(0xffffff, 50, 2000);
+
+            // カメラを作成
+            const camera = new THREE.PerspectiveCamera(); // 45,1.0
+            camera.position.set(250, 250, 250);
+            // カメラコントローラーを作成
+            const controls = new THREE.OrbitControls(camera);
+            // 滑らかにカメラコントローラーを制御する
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.2;
+
+            // 地面と軸の生成
+            scene.add(new THREE.GridHelper(600));
+            scene.add(new THREE.AxesHelper(300));
+
+            // グループを作成
+            const group = new THREE.Group();
+            scene.add(group);
+            const geometry = new THREE.BoxBufferGeometry(50, 50, 50);
+            const material = new THREE.MeshStandardMaterial();
+
+            for (let i = 0; i < 1000; i++) {
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.x = (Math.random() - 0.5) * 2000;
+                mesh.position.y = (Math.random() - 0.5) * 2000;
+                mesh.position.z = (Math.random() - 0.5) * 2000;
+                mesh.rotation.x = Math.random() * 2 * Math.PI;
+                mesh.rotation.y = Math.random() * 2 * Math.PI;
+                mesh.rotation.z = Math.random() * 2 * Math.PI;
+                // グループに格納する
+                group.add(mesh);
+            }
+
+            // 光源
+            scene.add(new THREE.DirectionalLight(0xff0000, 2)); // 平行光源
+            scene.add(new THREE.AmbientLight(0x00ffff)); // 環境光源
+
+            tick();
+
+            // 毎フレーム時に実行されるループイベントです
+            function tick() {
+
+                // カメラコントローラーを更新
+                controls.update();
+
+                // レンダリング
+                renderer.render(scene, camera);
+                requestAnimationFrame(tick);
+            }
+
+
+            // 初期化のために実行
+            onResize();
+            // リサイズイベント発生時に実行
+            window.addEventListener('resize', onResize);
+
+            function onResize() {
+                // サイズを取得
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+
+                // レンダラーのサイズを調整する
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(width, height);
+
+                // カメラのアスペクト比を正す
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+
+            }
+
+        }
+    </script>
+</head>
+
+<body>
+    <canvas id="myCanvas"></canvas>
+</body>
+
+</html>

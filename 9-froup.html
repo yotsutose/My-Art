@@ -1,0 +1,114 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script src="orbitcontrols.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+
+    <script>
+        // ページの読み込みを待つ
+        window.addEventListener('load', init);
+
+        function init() {
+            // レンダラーを作成
+            const renderer = new THREE.WebGLRenderer({
+                canvas: document.querySelector('#myCanvas'),
+                antialias: true
+            });
+
+            // シーンを作成
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xFFFFFF);
+            scene.fog = new THREE.Fog(0xFFFFFF, 50, 700);
+
+            // カメラを作成
+            const camera = new THREE.PerspectiveCamera(); // 45,1.0
+            camera.position.set(250, 250, 250);
+            // カメラコントローラーを作成
+            const controls = new THREE.OrbitControls(camera);
+            // 滑らかにカメラコントローラーを制御する
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.2;
+
+            // 地面と軸の生成
+            scene.add(new THREE.GridHelper(600));
+            scene.add(new THREE.AxesHelper(300));
+
+            // グループを作る
+            const group = new THREE.Group();
+            // 3D空間にグループを追加する
+            scene.add(group);
+
+            for (let i = 0; i < 10; i++) {
+                // 直方体を作成
+                const geometry = new THREE.IcosahedronGeometry(50, 1);
+                const material = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x4169E1 });
+                const mesh = new THREE.Mesh(geometry, material);
+
+                // 配置座標を計算
+                const radian = (i / 10) * Math.PI * 2;
+                mesh.position.set(
+                    200 * Math.cos(radian), // X座標
+                    30, // Y座標
+                    200 * Math.sin(radian) // Z座標
+                );
+
+                // グループに追加する
+                group.add(mesh);
+            }
+
+            let delta = 0.01;
+            tick();
+            // 毎フレーム時に実行されるループイベントです
+            function tick() {
+                group.rotation.y += delta;
+
+                document.onclick = function () {
+                    delta += 0.01;
+                };
+
+                // カメラコントローラーを更新
+                controls.update();
+
+                // レンダリング
+                renderer.render(scene, camera);
+                requestAnimationFrame(tick);
+            }
+
+
+            // 初期化のために実行
+            onResize();
+            // リサイズイベント発生時に実行
+            window.addEventListener('resize', onResize);
+
+            function onResize() {
+                // サイズを取得
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+
+                // レンダラーのサイズを調整する
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(width, height);
+
+                // カメラのアスペクト比を正す
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+
+            }
+
+        }
+    </script>
+</head>
+
+<body>
+    <canvas id="myCanvas"></canvas>
+</body>
+
+</html>

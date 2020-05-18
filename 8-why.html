@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/105/three.min.js"></script>
+    <script>
+        // ページの読み込みを待つ
+        window.addEventListener('load', init);
+
+        function init() {
+
+            // サイズを指定
+            const width = 1200;
+            const height = 540;
+            // レンダラーを作成
+            const renderer = new THREE.WebGLRenderer({
+                canvas: document.querySelector('#myCanvas')
+            });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(width, height);
+
+            // シーンを作成
+            const scene = new THREE.Scene();
+
+            // カメラを作成
+            const camera = new THREE.PerspectiveCamera(45, width / height);
+            camera.position.set(0, 110, 110); // 視点
+            camera.lookAt(new THREE.Vector3(0, 0, 0)); // カメラは中心を向く
+
+            // 正二十面体を作成
+            const geometry = new THREE.IcosahedronGeometry(60);
+            const material = new THREE.MeshBasicMaterial({ wireframe: true });
+            const box20 = new THREE.Mesh(geometry, material);
+            scene.add(box20);
+
+            tick();
+
+            // 毎フレーム時に実行されるループイベントです
+            function tick() {
+                box20.rotation.y += 0.01;
+
+                // レンダリング
+                renderer.render(scene, camera);
+                requestAnimationFrame(tick);
+            }
+
+        }
+    </script>
+</head>
+
+<body>
+    <canvas id="myCanvas"></canvas>
+</body>
+
+</html>

@@ -1,0 +1,251 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script src="orbitcontrols.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+
+    <script>
+        // ページの読み込みを待つ
+        window.addEventListener('load', init);
+
+        function init() {
+            // レンダラーを作成
+            const renderer = new THREE.WebGLRenderer({
+                canvas: document.querySelector('#myCanvas'),
+                antialias: true
+            });
+
+            // シーンを作成
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xFFC0CB);
+
+            // カメラを作成
+            const camera = new THREE.PerspectiveCamera(60); // 45,1.0
+            camera.position.y = 300;
+            // カメラコントローラーを作成
+            const controls = new THREE.OrbitControls(camera);
+            // 滑らかにカメラコントローラーを制御する
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.2;
+
+            /*
+            // 地面と軸の生成
+            scene.add(new THREE.GridHelper(600));
+            scene.add(new THREE.AxesHelper(300));
+            */
+
+
+            const geometry = new THREE.BoxGeometry(100, 100, 100);
+            const material = new THREE.MeshBasicMaterial({
+                map: new THREE.TextureLoader().load('imgs/risu3.png'),
+                side: THREE.DoubleSide,
+            });
+            const earthMesh = new THREE.Mesh(geometry, material);
+            scene.add(earthMesh);
+
+            earthMesh.position.set(
+                0, 0, 0
+            );
+
+            // 光源
+            scene.add(new THREE.DirectionalLight(0xff0000, 2)); // 平行光源
+            scene.add(new THREE.AmbientLight(0x00ffff)); // 環境光源
+
+            // 星屑を作成します (カメラの動きをわかりやすくするため)
+            createStarField();
+
+            function createStarField() {
+                // 形状データを作成
+                const geometry = new THREE.Geometry();
+                for (let i = 0; i < 1000; i++) {
+                    geometry.vertices.push(
+                        new THREE.Vector3(
+                            3000 * (Math.random() - 0.5),
+                            3000 * (Math.random() - 0.5),
+                            3000 * (Math.random() - 0.5)
+                        )
+                    );
+                }
+                // マテリアルを作成
+                const material = new THREE.PointsMaterial({
+                    size: 10,
+                    color: 0xffffff
+                });
+
+                // 物体を作成
+                const mesh = new THREE.Points(geometry, material);
+                scene.add(mesh);
+            }
+
+            // グループを作る
+            const group = new THREE.Group();
+            // 3D空間にグループを追加する
+            scene.add(group);
+
+            for (let i = 0; i < 10; i++) {
+                // 直方体を作成
+                const geometry = new THREE.IcosahedronGeometry(50, 0);
+                const material = new THREE.MeshPhongMaterial({  wireframe: false,color: 0xADFF2F });
+                const mesh = new THREE.Mesh(geometry, material);
+
+                const geometry1 = new THREE.IcosahedronGeometry(50, 0);
+                const material1 = new THREE.MeshLambertMaterial({  wireframe: true,color: 0x006400 });
+                const mesh1 = new THREE.Mesh(geometry1, material1);
+
+                // 配置座標を計算
+                const radian = (i / 10) * Math.PI * 2;
+                mesh.position.set(
+                    400 * Math.cos(radian), // X座標
+                    30, // Y座標
+                    400 * Math.sin(radian) // Z座標
+                );
+                mesh1.position.set(
+                    400 * Math.cos(radian), // X座標
+                    30, // Y座標
+                    400 * Math.sin(radian) // Z座標
+                );
+
+                // グループに追加する
+                group.add(mesh);
+                group.add(mesh1);
+            }
+
+            // マウス座標管理用のベクトルを作成
+            const mouse = new THREE.Vector2();
+
+            // canvas 要素の参照を取得する
+            const canvas = document.querySelector('#myCanvas');
+
+            // マウスとの交差を調べたいものは配列に格納する
+            const meshList = [];
+            // 配列に保存
+            meshList.push(earthMesh);
+
+
+            // レイキャストを作成
+            const raycaster = new THREE.Raycaster();
+
+            canvas.addEventListener('mousemove', handleMouseMove);
+
+            // マウスを動かしたときのイベント
+            function handleMouseMove(event) {
+                const element = event.currentTarget;
+                // canvas要素上のXY座標
+                const x = event.clientX - element.offsetLeft;
+                const y = event.clientY - element.offsetTop;
+                // canvas要素の幅・高さ
+                const w = element.offsetWidth;
+                const h = element.offsetHeight;
+
+                // -1〜+1の範囲で現在のマウス座標を登録する
+                mouse.x = (x / w) * 2 - 1;
+                mouse.y = -(y / h) * 2 + 1;
+            }
+
+            let delta = 0.01;
+            let rot = 0;
+            let dist = 400;
+            let flag=0;
+            tick();
+            // 毎フレーム時に実行されるループイベントです
+            function tick() {
+
+                rot -= 0.5; // 毎フレーム角度を0.5度ずつ足していく
+                // ラジアンに変換する
+                const radian = (rot * Math.PI) / 180;
+                camera.position.x = dist * Math.sin(radian);
+                camera.position.z = dist * Math.cos(radian);
+
+                earthMesh.rotation.y += delta;
+                if (delta == 0.01) {
+                    dist += 7;
+                }
+                else if (delta < 0.01) {
+                    delta = 0.01;
+                    dist = 200;
+                }
+                else {
+                    delta -= 0.003;
+                    dist -= 25;
+                    camera.position.y += 4;
+                    if (camera.position.y > 200) camera.position.y = 200;
+                }
+
+                if (dist > 400) {
+                    if(flag==1){
+                        flag=0;
+                        document.location.href = "http://www.ipentec.com";
+                    }
+                    dist = 400;
+                    camera.position.y = 200;
+                }
+                if (dist < 200) {
+                    dist = 200;
+                }
+
+                // レイキャスト = マウス位置からまっすぐに伸びる光線ベクトルを生成
+                raycaster.setFromCamera(mouse, camera);
+
+                // その光線とぶつかったオブジェクトを得る
+                const intersects = raycaster.intersectObjects(meshList);
+
+                meshList.map(mesh => {
+                    document.onclick = function () {
+                        // 交差しているオブジェクトが1つ以上存在し、
+                        // 交差しているオブジェクトの1番目(最前面)のものだったら
+                        if (intersects.length > 0 && mesh === intersects[0].object) {
+                            delta = 0.5;
+                            camera.position.y = -300;
+                            rot += 180;
+                            flag=1;
+                        }
+                    };
+
+                });
+
+                // カメラコントローラーを更新
+                controls.update();
+
+                // レンダリング
+                renderer.render(scene, camera);
+                requestAnimationFrame(tick);
+            }
+
+
+            // 初期化のために実行
+            onResize();
+            // リサイズイベント発生時に実行
+            window.addEventListener('resize', onResize);
+
+            function onResize() {
+                // サイズを取得
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+
+                // レンダラーのサイズを調整する
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(width, height);
+
+                // カメラのアスペクト比を正す
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+
+            }
+
+        }
+    </script>
+</head>
+
+<body>
+    <canvas id="myCanvas"></canvas>
+</body>
+
+</html>
